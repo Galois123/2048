@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>2048</title>
+    <script type="text/javascript" src="static/jquery-1.12.4.min.js"></script>
+    <style>
+        table {
+            background-color: #46c166;
+        }
+
+        table td {
+            text-align: center;
+            font-size: 28px;
+            width: 80px;
+            height: 80px;
+            border: #332b2b solid 2px;
+        }
+
+    </style>
+    <script>
+        $(function () {
+            to_light();
+
+            function to_light() {
+                // 高亮非空格子
+                obj_td = $('td');
+                var val;
+                for (var j = 0; j < obj_td.length; j++) {
+                    val = obj_td[j].innerText;
+                    if (obj_td[j].innerText != '') {
+                        r = 10 * (val % 25);
+                        g = 20 * (val % 12);
+                        b = 30 * (val % 8);
+                        // alert(r + ' ' + g + ' ' + b);
+                        $(obj_td[j]).css('background-color', 'rgba(' + r + ', ' + g + ', ' + b + ', 0.5)');
+                    } else {
+                        $(obj_td[j]).css('background-color', '#178bb7');
+                    }
+
+                }
+            }
+
+            // document.onkeydown=function(e){    //对整个页面监听
+            //     var keyNum=window.event ? e.keyCode :e.which;       //获取被按下的键值
+            $(document).keydown(function (event) {
+                //判断如果用户按下了回车键（keycody=13）
+                keyNum = event.keyCode;
+                keywords = [37, 38, 39, 40]
+                if (keywords.indexOf(keyNum) != -1) {
+
+                    if (keyNum == 37) {
+                        action = 'LEFT'
+
+                    } else if (keyNum == 38) {
+                        action = 'UP'
+
+                    } else if (keyNum == 39) {
+                        action = 'RIGHT'
+
+                    } else {
+                        action = 'DOWN'
+
+                    }
+                    // 获取页面中的数据
+                    var o_td = $('td');
+                    matrix = [[], [], [], []]
+                    for (var i = 0; i < o_td.length; i++) {
+                        matrix[Math.floor(i / 4)][i % 4] = o_td[i].innerText
+                    }
+                    params = {
+                        'action': action,
+                        'matrix': matrix
+                    };
+                    $.ajax({
+                        url: "/move",
+                        type: "post",
+                        contentType: "application/json",
+                        data: JSON.stringify(params),
+                        success: function (resp) {
+                            if (resp.errno == 2) {
+                                res_matrix = resp.data.matrix;
+                                var o_td = $('td')
+                                for (var i = 0; i < o_td.length; i++) {
+                                    o_td[i].innerText = res_matrix[i]
+                                }
+                                to_light();
+                            } else if (resp.errno == 1) {
+                                alert('非法参数')
+                            } else if (resp.errno == -1) {
+                                alert('游戏结束');
+                                location.reload();
+                            }
+                        }
+                    })
+                }
+            })
+        });
+    </script>
+</head>
+<body>
+<table>
+    {% for row in data.matrix %}
+        <tr>
+            {% for col in row %}
+                <td id="cell">{{ col }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+</body>
+</html>
